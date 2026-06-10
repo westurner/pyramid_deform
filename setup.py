@@ -29,7 +29,7 @@ except IOError:
 
 install_requires = [
     'pyramid',
-    'deform>=0.8.1' # button disabled arg
+    'deform<3'
     ]
 
 tests_require = ['nose', 'coverage', 'Mock']
