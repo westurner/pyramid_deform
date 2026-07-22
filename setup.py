@@ -12,7 +12,7 @@
 #
 ##############################################################################
 
-__version__ = '0.2'
+__version__ = '0.2.1'
 
 import os
 
@@ -20,7 +20,7 @@ from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
 try:
-    with open(os.path.join(here, 'README.txt')) as f:
+    with open(os.path.join(here, 'README.rst')) as f:
         README = f.read()
     with open(os.path.join(here, 'CHANGES.txt')) as f:
         CHANGES = f.read()
@@ -29,10 +29,10 @@ except IOError:
 
 install_requires = [
     'pyramid',
-    'deform<3'
+    'deform>=3.0.0'
     ]
 
-tests_require = ['nose', 'coverage', 'Mock']
+tests_require = ['pytest', 'mock']
 
 docs_extras = ['Sphinx']
 
@@ -44,10 +44,14 @@ setup(name='pyramid_deform',
       classifiers=[
         "Intended Audience :: Developers",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2.6",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.2",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "Programming Language :: Python :: Implementation :: CPython",
         "Framework :: Pyramid",
         ],

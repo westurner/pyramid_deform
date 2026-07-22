@@ -70,6 +70,18 @@ class TestFormView(unittest.TestCase):
         inst.form_class = DummyForm
         result = inst()
         self.assertEqual(result, 'success')
+
+    def test___call__button_prefixed_in_request(self):
+        schema = DummySchema()
+        request = DummyRequest()
+        request.POST['button:submit'] = True
+        inst = self._makeOne(request)
+        inst.schema = schema
+        inst.buttons = (DummyButton('submit'), )
+        inst.submit_success = lambda *x: 'success'
+        inst.form_class = DummyForm
+        result = inst()
+        self.assertEqual(result, 'success')
         
     def test___call__button_in_request_fail(self):
         schema = DummySchema()

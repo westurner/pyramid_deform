@@ -11,3 +11,6 @@ local
 nosetests.xml
 pyramid_deform/coverage.xml
 .tox/
+/.idea/*
+/.junie/*
+/coverage.xml

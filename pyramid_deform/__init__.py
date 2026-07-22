@@ -1,43 +1,20 @@
-import os
 import binascii
-import types
-
-from pkg_resources import resource_filename
+import os
 
 import colander
 import deform
-import deform.form
 import deform.exception
+import deform.form
+import deform.renderer
 import deform.widget
 from deform.form import Button
-
 from pyramid.exceptions import ConfigurationError
 from pyramid.httpexceptions import HTTPFound
-from pyramid.i18n import get_localizer
-from pyramid.i18n import TranslationStringFactory
+from pyramid.i18n import get_localizer, TranslationStringFactory
 from pyramid.threadlocal import get_current_request
-import sys
-
 
 _ = TranslationStringFactory('pyramid_deform')
 
-# True if we are running on Python 3.
-PY3 = sys.version_info[0] == 3
-
-if PY3: # pragma: no cover
-    string_types = str,
-    integer_types = int,
-    class_types = type,
-    text_type = str
-    binary_type = bytes
-    long = int
-else:
-    string_types = basestring,
-    integer_types = (int, long)
-    class_types = (type, types.ClassType)
-    text_type = unicode
-    binary_type = str
-    long = long
 
 class FormView(object):
     """
@@ -101,7 +78,7 @@ class FormView(object):
         result = None
 
         for button in form.buttons:
-            if button.name in self.request.POST:
+            if button.name in self.request.POST or f'button:{button.name}' in self.request.POST:
                 success_method = getattr(self, '%s_success' % button.name)
                 try:
                     controls = self.request.POST.items()
@@ -157,7 +134,7 @@ class FormView(object):
         """
         return {
             'form': e.render(),
-            }
+        }
 
     def show(self, form):
         """
@@ -174,7 +151,8 @@ class FormView(object):
             rendered = form.render(appstruct)
         return {
             'form': rendered,
-            }
+        }
+
 
 class WizardState(object):
     def __init__(self, request, wizard_name):
@@ -232,18 +210,18 @@ class WizardState(object):
     def decrement_step(self):
         step = self.get_step_num()
         if step > 0:
-            self.set_step_num(step-1)
+            self.set_step_num(step - 1)
 
     def increment_step(self):
         step = self.get_step_num()
-        self.set_step_num(step+1)
+        self.set_step_num(step + 1)
 
     def set_state(self, name, state):
         step = self.get_step_num()
         self.set_step_state(step, name, state)
 
-class FormWizardView(object):
 
+class FormWizardView(object):
     form_view_class = FormView
     wizard_state_class = WizardState
     schema = None
@@ -255,8 +233,8 @@ class FormWizardView(object):
         self.request = request
         self.wizard_state = self.wizard_state_class(request, self.wizard.name)
         step = self.wizard_state.get_step_num()
-        
-        if step > len(self.wizard.schemas)-1:
+
+        if step > len(self.wizard.schemas) - 1:
             states = self.wizard_state.get_step_states()
             result = self.wizard.done(request, states)
             self.wizard_state.clear()
@@ -286,7 +264,7 @@ class FormWizardView(object):
         if step > 0:
             buttons.append(prev_button)
 
-        if step < len(self.wizard.schemas)-1:
+        if step < len(self.wizard.schemas) - 1:
             buttons.append(next_button)
         else:
             buttons.append(done_button)
@@ -310,7 +288,7 @@ class FormWizardView(object):
         serializer = self.get_schema_serializer()
         if serializer is not None:
             state = serializer.deserialize(state)
-        return state 
+        return state
 
     def serialize(self, state):
         serializer = self.get_schema_serializer()
@@ -329,22 +307,23 @@ class FormWizardView(object):
         validated = self.serialize(validated)
         self.wizard_state.set_state(self.schema.name, validated)
         self.wizard_state.increment_step()
-        return HTTPFound(location = self.request.path_url)
+        return HTTPFound(location=self.request.path_url)
 
     def previous_success(self, validated):
         validated = self.serialize(validated)
         self.wizard_state.set_state(self.schema.name, validated)
         self.wizard_state.decrement_step()
-        return HTTPFound(location = self.request.path_url)
+        return HTTPFound(location=self.request.path_url)
 
     def previous_failure(self, e):
         self.wizard_state.decrement_step()
-        return HTTPFound(location = self.request.path_url)
+        return HTTPFound(location=self.request.path_url)
+
 
 class FormWizard(object):
-    form_wizard_view_class = FormWizardView # for testing
+    form_wizard_view_class = FormWizardView  # for testing
     wizard_state_class = WizardState
-    
+
     def __init__(self, name, done, *schemas):
         self.name = name
         self.done = done
@@ -372,21 +351,23 @@ class FormWizard(object):
             if is_current:
                 classes.append('hilight')
             result.append({
-                'num':num,
-                'name':schema.name,
-                'title':schema.title,
-                'desc':schema.description,
-                'current':step == num,
-                'url':request.path_url + '?step=%s' % num,
-                'first':is_first,
-                'last':is_last,
-                'class':' '.join(classes),
-                })
+                'num':     num,
+                'name':    schema.name,
+                'title':   schema.title,
+                'desc':    schema.description,
+                'current': step == num,
+                'url':     request.path_url + '?step=%s' % num,
+                'first':   is_first,
+                'last':    is_last,
+                'class':   ' '.join(classes),
+            })
         return result
+
 
 @colander.deferred
 def deferred_csrf_value(node, kw):
     return kw['request'].session.get_csrf_token()
+
 
 @colander.deferred
 def deferred_csrf_validator(node, kw):
@@ -394,7 +375,9 @@ def deferred_csrf_validator(node, kw):
         if value != kw['request'].session.get_csrf_token():
             raise colander.Invalid(node,
                                    _('Invalid cross-site scripting token'))
+
     return csrf_validate
+
 
 class CSRFSchema(colander.Schema):
     """
@@ -421,11 +404,12 @@ class CSRFSchema(colander.Schema):
       factory* in your Pyramid application.
     """
     csrf_token = colander.SchemaNode(
-        colander.String(),
-        widget=deform.widget.HiddenWidget(),
-        default=deferred_csrf_value,
-        validator=deferred_csrf_validator,
-        )
+            colander.String(),
+            widget=deform.widget.HiddenWidget(),
+            default=deferred_csrf_value,
+            validator=deferred_csrf_validator,
+    )
+
 
 def translator(term):
     request = get_current_request()
@@ -434,31 +418,28 @@ def translator(term):
     else:
         return term.interpolate() if hasattr(term, 'interpolate') else term
 
+
 def configure_zpt_renderer(search_path=()):
-    default_paths = deform.form.Form.default_renderer.loader.search_path
-    paths = []
-    for path in search_path:
-        pkg, resource_name = path.split(':')
-        paths.append(resource_filename(pkg, resource_name))
-    deform.form.Form.default_renderer = deform.ZPTRendererFactory(
-        tuple(paths) + default_paths, translator=translator)
+    deform.renderer.configure_zpt_renderer(search_path, translator=translator)
+
 
 _marker = object()
+
 
 class SessionFileUploadTempStore(object):
     def __init__(self, request):
         try:
-            self.tempdir=request.registry.settings['pyramid_deform.tempdir']
+            self.tempdir = request.registry.settings['pyramid_deform.tempdir']
         except KeyError:
             raise ConfigurationError(
-                'To use SessionFileUploadTempStore, you must set a  '
-                '"pyramid_deform.tempdir" key in your .ini settings. It '
-                'points to a directory which will temporarily '
-                'hold uploaded files when form validation fails.')
+                    'To use SessionFileUploadTempStore, you must set a  '
+                    '"pyramid_deform.tempdir" key in your .ini settings. It '
+                    'points to a directory which will temporarily '
+                    'hold uploaded files when form validation fails.')
         self.request = request
         self.session = request.session
         self.tempstore = self.session.setdefault('substanced.tempstore', {})
-        
+
     def preview_url(self, uid):
         return None
 
@@ -471,9 +452,7 @@ class SessionFileUploadTempStore(object):
 
         if stream is not None:
             while True:
-                randid = binascii.hexlify(os.urandom(20))
-                if not isinstance(randid, string_types):
-                    randid = randid.decode("ascii")
+                randid = binascii.hexlify(os.urandom(20)).decode("ascii")
                 fn = os.path.join(self.tempdir, randid)
                 if not os.path.exists(fn):
                     # XXX race condition
@@ -493,7 +472,7 @@ class SessionFileUploadTempStore(object):
             return default
 
         newdata = data.copy()
-            
+
         randid = newdata.get('randid')
 
         if randid is not None:
@@ -511,6 +490,7 @@ class SessionFileUploadTempStore(object):
         if data is _marker:
             raise KeyError(name)
         return data
+
 
 def chunks(stream, chunk_size=10000):
     while True:
@@ -533,11 +513,11 @@ def includeme(config):
     """
     settings = config.registry.settings
     search_path = settings.get(
-        'pyramid_deform.template_search_path', '').strip()
+            'pyramid_deform.template_search_path', '').strip()
 
     config.add_translation_dirs('colander:locale', 'deform:locale')
     static_path = settings.get(
-        'pyramid_deform.static_path', 'static-deform').strip()
+            'pyramid_deform.static_path', 'static-deform').strip()
     config.add_static_view(static_path, 'deform:static')
 
     configure_zpt_renderer(search_path.split())
