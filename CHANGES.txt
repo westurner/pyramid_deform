@@ -1,3 +1,18 @@
+0.3 (2026-07-15)
+----------------
+
+- Update to Deform 3 guidelines.
+
+- Require ``deform>=3.0``.
+
+- Use ``deform.renderer.configure_zpt_renderer`` for renderer configuration.
+
+- Support ``button:`` prefix for button names in POST data (Deform 3 compatibility).
+
+- Fix ``tox`` configuration to correctly collect tests with ``pytest``.
+
+- Drop support for Python 2.
+
 0.2 (2013-08-01)
 ----------------
 
